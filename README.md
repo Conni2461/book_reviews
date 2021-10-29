@@ -7,9 +7,10 @@
 Top authors / top books,
 
 
-https://developer.nytimes.com/docs/books-product/1/overview  Backup: https://www.kaggle.com/dhruvildave/new-york-times-best-sellers
+https://developer.nytimes.com/docs/books-product/1/overview  Connor
+Backup: https://www.kaggle.com/dhruvildave/new-york-times-best-sellers
 
-https://www.goodreads.com/api
+https://www.goodreads.com/api Simon - Karaj
 Backup:
 https://www.kaggle.com/jealousleopard/goodreadsbooks
 
