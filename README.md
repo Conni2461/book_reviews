@@ -1,5 +1,9 @@
 # book_reviews
 
+## Application
+
+>Goal: Map New York Time's best sellers to Goodreads Reviews.
+
 Top authors / top books,
 
 
