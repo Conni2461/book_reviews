@@ -1,0 +1,6 @@
+rating:
+  css: "#acrPopover i.a-icon-star span.a-icon-alt"
+  type: Text
+reviewCount:
+  css: '#acrCustomerReviewLink'
+  type: Text

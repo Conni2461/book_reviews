@@ -1,0 +1,11 @@
+rating:
+  css: '#bookMeta [itemprop="ratingValue"]'
+  type: Text
+ratingCount:
+  css: '#bookMeta [itemprop="ratingCount"]'
+  type: Attribute
+  attribute: content
+reviewCount:
+  css: '#bookMeta [itemprop="reviewCount"]'
+  type: Attribute
+  attribute: content
