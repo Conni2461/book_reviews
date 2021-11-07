@@ -54,27 +54,34 @@ def getList(date, name_list):
 
 def getAll():
     cursor = "current"
-    for i in range(10):
-        lhs, books = getList(cursor, "hardcover-fiction")
+    while True:
+        sleep(6)
+        if cursor == "" or cursor == None:
+            break
+        print(f"getting list: {cursor}")
+        lhs, books = getList(cursor, "Combined Print and E-Book Fiction")
         if lhs == None or books == None:
-            i = i - 1
             continue
         cursor = lhs
         for book in books:
+            if book["rank"] > 15:
+                continue
             score = 15 - book["rank"] + 1
             try:
-                b = Book(isbn=book["primary_isbn13"], title=book["title"], author=book["author"], score=score, publisher=book["publisher"], book_image=book["book_image"], amazon_product_url=book["amazon_product_url"])
+                amazon_url = book["amazon_product_url"]
+                b = Book(isbn=book["primary_isbn13"], title=book["title"], author=book["author"], score=score, publisher=book["publisher"], book_image=book["book_image"], amazon_product_url=amazon_url)
                 session.add(b)
                 session.commit()
-                amazon = scrape(book["amazon_product_url"], "definitions/amazon.yml")
-                if amazon != None:
-                    rating = amazon["rating"]
-                    if rating != None:
-                        b.amazon_rating = rating.split()[0]
-                    reviewCount = amazon["reviewCount"]
-                    if reviewCount != None:
-                        b.amazon_review_count = reviewCount.split()[0].replace(",", "")
-                    session.commit()
+                if amazon_url != None:
+                    amazon = scrape(book["amazon_product_url"], "definitions/amazon.yml")
+                    if amazon != None:
+                        rating = amazon["rating"]
+                        if rating != None:
+                            b.amazon_rating = rating.split()[0]
+                        reviewCount = amazon["reviewCount"]
+                        if reviewCount != None:
+                            b.amazon_review_count = reviewCount.split()[0].replace(",", "")
+                        session.commit()
 
                 good = scrape(f"https://www.goodreads.com/search?q={book['primary_isbn13']}", "definitions/goodreads.yml")
                 if good != None:
@@ -88,6 +95,13 @@ def getAll():
                 b = session.query(Book).get(book["primary_isbn13"])
                 b.score += score
                 session.commit()
+
+def exportToCsv():
+    books = session.query(Book).all()
+    with open("books.csv", "w") as f:
+        for book in books:
+            f.write(f"{book.isbn}\n")
+
 
 class Book(Base):
     __tablename__ = "Books"
@@ -117,4 +131,5 @@ class Book(Base):
         return f"Book(isbn={self.isbn!r}, title={self.title!r}, author={self.author!r}, score={self.score!r})"
 
 Base.metadata.create_all(engine)
-getAll()
+# getAll()
+# exportToCsv()

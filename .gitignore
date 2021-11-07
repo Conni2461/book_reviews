@@ -1,9 +1,6 @@
 # Test Jupyter Notebooks
 nyt.ipynb
 
-# Ignore database
-books.sqlite
-
 # Ignore key.txt
 key.txt
 
@@ -145,4 +142,3 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
-
