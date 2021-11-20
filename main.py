@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, Column, Date, String, Integer, Float, exc,
 from sqlalchemy.orm import Session, declarative_base
 
 import requests
+from datetime import datetime
 
 from selectorlib import Extractor
 import requests
@@ -90,6 +91,58 @@ def scrapeGoodreads():
             session.commit()
 
 
+def fetchGoogleBooks():
+    books = session.query(GoogleBooks).all()
+    for book in books:
+        r = requests.get(f"https://www.googleapis.com/books/v1/volumes?q={book.isbn}")
+        if not r.ok:
+            continue
+        data = r.json()
+        if "items" not in data:
+            continue
+        found = False
+        for item in data["items"]:
+            if found:
+                break
+            if "volumeInfo" not in item:
+                continue
+            info = item["volumeInfo"]
+            if "industryIdentifiers" not in info:
+                continue
+            ids = info["industryIdentifiers"]
+            for id in ids:
+                if id["type"] == "ISBN_13" and id["identifier"] == book.isbn:
+                    if "title" in info:
+                        book.title = info["title"]
+                    if "subtitle" in info:
+                        book.subtitle = info["subtitle"]
+                    if "authors" in info:
+                        book.authors = ";".join(info["authors"])
+                    if "description" in info:
+                        book.description = info["description"]
+                    if "categories" in info:
+                        book.categories = ";".join(info["categories"])
+                    if "average_rating" in info:
+                        book.average_rating = info["averageRating"]
+                    if "rating_count" in info:
+                        book.rating_count = info["ratingsCount"]
+                    if "maturity_rating" in info:
+                        book.maturity_rating = info["maturityRating"]
+                    if "language" in info:
+                        book.language = info["language"]
+                    if "page_count" in info:
+                        book.page_count = info["pageCount"]
+                    if "publisher" in info:
+                        book.publisher = info["publisher"]
+                    if "published_date" in info:
+                        book.published_date = datetime.strptime(
+                            info["publishedDate"], "%Y-%m-%d"
+                        )
+                    session.commit()
+                    print(book.title)
+                    found = True
+
+
 def getAllNYT():
     cursor = "current"
     while True:
@@ -163,10 +216,13 @@ class GoogleBooks(Base):
 
     isbn = Column(String, primary_key=True, nullable=False)
     title = Column(String, nullable=True)
-    author = Column(String, nullable=True)
+    subtitle = Column(String, nullable=True)
+    authors = Column(String, nullable=True)
     description = Column(String, nullable=True)
+    categories = Column(String, nullable=True)
     average_rating = Column(Float, nullable=True)
     rating_count = Column(Integer, nullable=True)
+    maturity_rating = Column(String, nullable=True)
     language = Column(Integer, nullable=True)
     page_count = Column(Integer, nullable=True)
     publisher = Column(String, nullable=True)
@@ -176,13 +232,16 @@ class GoogleBooks(Base):
         return (
             f"GoogleBooks(isbn={self.isbn!r}, "
             f"title={self.title!r}, "
-            f"author={self.author!r}, "
-            f"description={self.description!r})"
-            f"average_rating={self.average_rating!r})"
-            f"rating_count={self.rating_count!r})"
-            f"language={self.language!r})"
-            f"page_count={self.page_count!r})"
-            f"publisher={self.publisher!r})"
+            f"subtitle={self.subtitle!r}, "
+            f"authors={self.authors!r}, "
+            f"description={self.description!r}, "
+            f"categories={self.categories!r}, "
+            f"average_rating={self.average_rating!r}, "
+            f"rating_count={self.rating_count!r}, "
+            f"maturity_rating={self.maturity_rating!r}, "
+            f"language={self.language!r}, "
+            f"page_count={self.page_count!r}, "
+            f"publisher={self.publisher!r}, "
             f"published_date={self.published_date!r})"
         )
 
@@ -224,5 +283,6 @@ class Goodreads(Base):
 Base.metadata.create_all(engine)
 # getAllNYT()
 # exportToCsv()
-scrapeAmazon()
+# scrapeAmazon()
 # scrapeGoodreads()
+# fetchGoogleBooks()
