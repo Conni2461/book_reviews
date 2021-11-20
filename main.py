@@ -122,22 +122,20 @@ def fetchGoogleBooks():
                         book.description = info["description"]
                     if "categories" in info:
                         book.categories = ";".join(info["categories"])
-                    if "average_rating" in info:
+                    if "averageRating" in info:
                         book.average_rating = info["averageRating"]
-                    if "rating_count" in info:
+                    if "ratingsCount" in info:
                         book.rating_count = info["ratingsCount"]
-                    if "maturity_rating" in info:
+                    if "maturityRating" in info:
                         book.maturity_rating = info["maturityRating"]
                     if "language" in info:
                         book.language = info["language"]
-                    if "page_count" in info:
+                    if "pageCount" in info:
                         book.page_count = info["pageCount"]
                     if "publisher" in info:
                         book.publisher = info["publisher"]
-                    if "published_date" in info:
-                        book.published_date = datetime.strptime(
-                            info["publishedDate"], "%Y-%m-%d"
-                        )
+                    if "publishedDate" in info:
+                        book.published_date = info["publishedDate"]
                     session.commit()
                     print(book.title)
                     found = True
@@ -226,7 +224,7 @@ class GoogleBooks(Base):
     language = Column(Integer, nullable=True)
     page_count = Column(Integer, nullable=True)
     publisher = Column(String, nullable=True)
-    published_date = Column(Date, nullable=True)
+    published_date = Column(String, nullable=True)
 
     def __repr__(self) -> str:
         return (
