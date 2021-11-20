@@ -14,6 +14,14 @@ https://www.goodreads.com/api Simon - Karaj
 Backup:
 https://www.kaggle.com/jealousleopard/goodreadsbooks
 
+## TODO
+
+- split tables
+- scrape missing values amazon / goodreads
+- scrape google api
+- merge tables
+- drop useless columns, aggregate duplicates (normlaize values)
+
 
 
 https://developers.google.com/books![image](https://user-images.githubusercontent.com/92374756/139418242-3cd0e984-9885-472f-a1ff-ee047ba6f323.png)
