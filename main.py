@@ -148,7 +148,14 @@ class NYT(Base):
     amazon_product_url = Column(String, nullable=True)
 
     def __repr__(self) -> str:
-        return f"Book(isbn={self.isbn!r}, title={self.title!r}, author={self.author!r}, score={self.score!r})"
+        return (
+            f"NYT(isbn={self.isbn!r}, "
+            f"title={self.title!r}, "
+            f"score={self.author!r}, "
+            f"publisher={self.score!r}, "
+            f"book_image={self.book_image}, "
+            f"amazon_product_url={self.amazon_product_url!r})"
+        )
 
 
 class GoogleBooks(Base):
@@ -166,7 +173,18 @@ class GoogleBooks(Base):
     published_date = Column(Date, nullable=True)
 
     def __repr__(self) -> str:
-        return f"Book(isbn={self.isbn!r}, title={self.title!r}, author={self.author!r}, score={self.score!r})"
+        return (
+            f"GoogleBooks(isbn={self.isbn!r}, "
+            f"title={self.title!r}, "
+            f"author={self.author!r}, "
+            f"description={self.description!r})"
+            f"average_rating={self.average_rating!r})"
+            f"rating_count={self.rating_count!r})"
+            f"language={self.language!r})"
+            f"page_count={self.page_count!r})"
+            f"publisher={self.publisher!r})"
+            f"published_date={self.published_date!r})"
+        )
 
 
 class Amazon(Base):
@@ -178,7 +196,12 @@ class Amazon(Base):
     url = Column(String, nullable=True)
 
     def __repr__(self) -> str:
-        return f"Book(isbn={self.isbn!r}, title={self.title!r}, author={self.author!r}, score={self.score!r})"
+        return (
+            f"Amazon(isbn={self.isbn!r}, "
+            f"rating={self.rating!r}, "
+            f"review_count={self.review_count!r}, "
+            f"url={self.url!r})"
+        )
 
 
 class Goodreads(Base):
@@ -190,11 +213,16 @@ class Goodreads(Base):
     review_count = Column(Integer, nullable=True)
 
     def __repr__(self) -> str:
-        return f"Book(isbn={self.isbn!r}, title={self.title!r}, author={self.author!r}, score={self.score!r})"
+        return (
+            f"Goodreads(isbn={self.isbn!r}, "
+            f"rating={self.rating!r}, "
+            f"rating_count={self.rating_count!r}, "
+            f"review_count={self.review_count!r})"
+        )
 
 
 Base.metadata.create_all(engine)
 # getAllNYT()
 # exportToCsv()
-# scrapeAmazon()
+scrapeAmazon()
 # scrapeGoodreads()
