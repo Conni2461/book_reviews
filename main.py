@@ -94,7 +94,7 @@ def scrapeGoodreads():
 def fetchGoogleBooks():
     books = session.query(GoogleBooks).all()
     for book in books:
-        r = requests.get(f"https://www.googleapis.com/books/v1/volumes?q={book.isbn}")
+        r = requests.get(f"https://www.googleapis.com/books/v1/volumes?q=isbn:{book.isbn}")
         if not r.ok:
             continue
         data = r.json()
@@ -107,38 +107,33 @@ def fetchGoogleBooks():
             if "volumeInfo" not in item:
                 continue
             info = item["volumeInfo"]
-            if "industryIdentifiers" not in info:
-                continue
-            ids = info["industryIdentifiers"]
-            for id in ids:
-                if id["type"] == "ISBN_13" and id["identifier"] == book.isbn:
-                    if "title" in info:
-                        book.title = info["title"]
-                    if "subtitle" in info:
-                        book.subtitle = info["subtitle"]
-                    if "authors" in info:
-                        book.authors = ";".join(info["authors"])
-                    if "description" in info:
-                        book.description = info["description"]
-                    if "categories" in info:
-                        book.categories = ";".join(info["categories"])
-                    if "averageRating" in info:
-                        book.average_rating = info["averageRating"]
-                    if "ratingsCount" in info:
-                        book.rating_count = info["ratingsCount"]
-                    if "maturityRating" in info:
-                        book.maturity_rating = info["maturityRating"]
-                    if "language" in info:
-                        book.language = info["language"]
-                    if "pageCount" in info:
-                        book.page_count = info["pageCount"]
-                    if "publisher" in info:
-                        book.publisher = info["publisher"]
-                    if "publishedDate" in info:
-                        book.published_date = info["publishedDate"]
-                    session.commit()
-                    print(book.title)
-                    found = True
+            if "title" in info:
+                book.title = info["title"]
+            if "subtitle" in info:
+                book.subtitle = info["subtitle"]
+            if "authors" in info:
+                book.authors = ";".join(info["authors"])
+            if "description" in info:
+                book.description = info["description"]
+            if "categories" in info:
+                book.categories = ";".join(info["categories"])
+            if "averageRating" in info:
+                book.average_rating = info["averageRating"]
+            if "ratingsCount" in info:
+                book.rating_count = info["ratingsCount"]
+            if "maturityRating" in info:
+                book.maturity_rating = info["maturityRating"]
+            if "language" in info:
+                book.language = info["language"]
+            if "pageCount" in info:
+                book.page_count = info["pageCount"]
+            if "publisher" in info:
+                book.publisher = info["publisher"]
+            if "publishedDate" in info:
+                book.published_date = info["publishedDate"]
+            session.commit()
+            print(book.title)
+            found = True
 
 
 def getAllNYT():
@@ -283,4 +278,4 @@ Base.metadata.create_all(engine)
 # exportToCsv()
 # scrapeAmazon()
 # scrapeGoodreads()
-# fetchGoogleBooks()
+fetchGoogleBooks()
