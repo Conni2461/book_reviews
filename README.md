@@ -7,11 +7,11 @@
 
 ## TODO
 
-- split tables
-- scrape missing values amazon / goodreads
-- scrape google api
-- merge tables
-- drop useless columns, aggregate duplicates (normalize values)
+- ~~split tables~~
+- ~~scrape missing values amazon / goodreads~~ -> few missing "e-books?" from goodreads
+- ~~scrape google api~~ -> missing half the books, make attributes optional, rating, ratingcount, pages, Description, maturity rating 
+- merge tables (drop url from amazon, google attributes above) 
+- aggregate duplicates (normalize values)
 
 
 

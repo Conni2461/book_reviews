@@ -70,9 +70,9 @@ def scrapeAmazon():
             rating = amazon["rating"]
             if rating != None:
                 book.rating = rating.split()[0]
-            reviewCount = amazon["reviewCount"]
-            if reviewCount != None:
-                book.review_count = reviewCount.split()[0].replace(",", "")
+            review_count = amazon["review_count"]
+            if review_count != None:
+                book.review_count = review_count.split()[0].replace(",", "")
             session.commit()
 
 
@@ -94,7 +94,7 @@ def scrapeGoodreads():
 def fetchGoogleBooks():
     books = session.query(GoogleBooks).all()
     for book in books:
-        r = requests.get(f"https://www.googleapis.com/books/v1/volumes?q={book.isbn}")
+        r = requests.get(f"https://www.googleapis.com/books/v1/volumes?q=isbn:{book.isbn}")
         if not r.ok:
             continue
         data = r.json()
@@ -107,38 +107,33 @@ def fetchGoogleBooks():
             if "volumeInfo" not in item:
                 continue
             info = item["volumeInfo"]
-            if "industryIdentifiers" not in info:
-                continue
-            ids = info["industryIdentifiers"]
-            for id in ids:
-                if id["type"] == "ISBN_13" and id["identifier"] == book.isbn:
-                    if "title" in info:
-                        book.title = info["title"]
-                    if "subtitle" in info:
-                        book.subtitle = info["subtitle"]
-                    if "authors" in info:
-                        book.authors = ";".join(info["authors"])
-                    if "description" in info:
-                        book.description = info["description"]
-                    if "categories" in info:
-                        book.categories = ";".join(info["categories"])
-                    if "averageRating" in info:
-                        book.average_rating = info["averageRating"]
-                    if "ratingsCount" in info:
-                        book.rating_count = info["ratingsCount"]
-                    if "maturityRating" in info:
-                        book.maturity_rating = info["maturityRating"]
-                    if "language" in info:
-                        book.language = info["language"]
-                    if "pageCount" in info:
-                        book.page_count = info["pageCount"]
-                    if "publisher" in info:
-                        book.publisher = info["publisher"]
-                    if "publishedDate" in info:
-                        book.published_date = info["publishedDate"]
-                    session.commit()
-                    print(book.title)
-                    found = True
+            if "title" in info:
+                book.title = info["title"]
+            if "subtitle" in info:
+                book.subtitle = info["subtitle"]
+            if "authors" in info:
+                book.authors = ";".join(info["authors"])
+            if "description" in info:
+                book.description = info["description"]
+            if "categories" in info:
+                book.categories = ";".join(info["categories"])
+            if "averageRating" in info:
+                book.average_rating = info["averageRating"]
+            if "ratingsCount" in info:
+                book.rating_count = info["ratingsCount"]
+            if "maturityRating" in info:
+                book.maturity_rating = info["maturityRating"]
+            if "language" in info:
+                book.language = info["language"]
+            if "pageCount" in info:
+                book.page_count = info["pageCount"]
+            if "publisher" in info:
+                book.publisher = info["publisher"]
+            if "publishedDate" in info:
+                book.published_date = info["publishedDate"]
+            session.commit()
+            print(book.title)
+            found = True
 
 
 def getAllNYT():
@@ -248,15 +243,33 @@ class Amazon(Base):
     __tablename__ = "Amazon"
 
     isbn = Column(String, primary_key=True, nullable=False)
+    title = Column(String, nullable=True)
+    subtitle = Column(String, nullable=True)
+    author = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    price = Column(Float, nullable=True)
     rating = Column(Float, nullable=True)
     review_count = Column(Integer, nullable=True)
+    page_count = Column(Integer, nullable=True)
+    language = Column(String, nullable=True)
+    publisher = Column(String, nullable=True)
+    published_date = Column(String, nullable=True)
     url = Column(String, nullable=True)
 
     def __repr__(self) -> str:
         return (
             f"Amazon(isbn={self.isbn!r}, "
+            f"title={self.title!r}, "
+            f"subtitle={self.subtitle!r}, "
+            f"author={self.author!r}, "
+            f"description={self.description!r}, "
+            f"price={self.price!r}, "
             f"rating={self.rating!r}, "
             f"review_count={self.review_count!r}, "
+            f"page_count={self.page_count!r}, "
+            f"language={self.language!r}, "
+            f"publisher={self.publisher!r}, "
+            f"published_date={self.published_date!r}, "
             f"url={self.url!r})"
         )
 
@@ -283,4 +296,4 @@ Base.metadata.create_all(engine)
 # exportToCsv()
 # scrapeAmazon()
 # scrapeGoodreads()
-# fetchGoogleBooks()
+fetchGoogleBooks()

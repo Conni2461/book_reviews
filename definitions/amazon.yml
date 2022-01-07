@@ -1,6 +1,33 @@
+title:
+  css: '#productTitle.a-size-extra-large'
+  type: Text
+subtitle:
+  css: '#productSubtitle.a-size-large'
+  type: Text
+author:
+  css: '#bylineInfo .author .a-declarative .a-link-normal'
+  type: Text
+description:
+  css: '#bookDescription_feature_div .a-expander-content'
+  type: Text
+price:
+  css: 'span.a-color-base span.a-color-price'
+  type: Text
 rating:
   css: "#acrPopover i.a-icon-star span.a-icon-alt"
   type: Text
-reviewCount:
+review_count:
   css: '#acrCustomerReviewLink'
+  type: Text
+page_count:
+  css: 'div.centerColumn li.a-carousel-card:nth-of-type(1) div.a-section.a-spacing-none span'
+  type: Text
+language:
+  css: 'div.centerColumn li.a-carousel-card:nth-of-type(2) div.a-section.a-spacing-none span'
+  type: Text
+publisher:
+  css: 'div.centerColumn li.a-carousel-card:nth-of-type(3) div.a-section.a-spacing-none span'
+  type: Text
+published_date:
+  css: 'div.centerColumn li.a-carousel-card:nth-of-type(4) div.a-section.a-spacing-none span'
   type: Text
