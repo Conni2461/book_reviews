@@ -11,7 +11,7 @@ description:
   css: '#bookDescription_feature_div .a-expander-content'
   type: Text
 price:
-  css: 'span.a-color-base span.a-color-price'
+  css: 'a.a-button-text span.a-color-base'
   type: Text
 rating:
   css: "#acrPopover i.a-icon-star span.a-icon-alt"
@@ -30,4 +30,7 @@ publisher:
   type: Text
 published_date:
   css: 'div.centerColumn li.a-carousel-card:nth-of-type(4) div.a-section.a-spacing-none span'
+  type: Text
+book_type:
+  css: 'li.swatchElement.selected a.a-button-text span:nth-of-type(1)'
   type: Text
