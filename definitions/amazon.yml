@@ -7,7 +7,7 @@ subtitle:
 author:
   css: '#bylineInfo .author .a-declarative .a-link-normal'
   type: Text
-product_description:
+description:
   css: '#bookDescription_feature_div .a-expander-content'
   type: Text
 price:
@@ -16,7 +16,7 @@ price:
 rating:
   css: "#acrPopover i.a-icon-star span.a-icon-alt"
   type: Text
-reviewCount:
+review_count:
   css: '#acrCustomerReviewLink'
   type: Text
 page_count:

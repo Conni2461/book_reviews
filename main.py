@@ -70,9 +70,9 @@ def scrapeAmazon():
             rating = amazon["rating"]
             if rating != None:
                 book.rating = rating.split()[0]
-            reviewCount = amazon["reviewCount"]
-            if reviewCount != None:
-                book.review_count = reviewCount.split()[0].replace(",", "")
+            review_count = amazon["review_count"]
+            if review_count != None:
+                book.review_count = review_count.split()[0].replace(",", "")
             session.commit()
 
 
@@ -243,15 +243,33 @@ class Amazon(Base):
     __tablename__ = "Amazon"
 
     isbn = Column(String, primary_key=True, nullable=False)
+    title = Column(String, nullable=True)
+    subtitle = Column(String, nullable=True)
+    author = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    price = Column(Float, nullable=True)
     rating = Column(Float, nullable=True)
     review_count = Column(Integer, nullable=True)
+    page_count = Column(Integer, nullable=True)
+    language = Column(String, nullable=True)
+    publisher = Column(String, nullable=True)
+    published_date = Column(String, nullable=True)
     url = Column(String, nullable=True)
 
     def __repr__(self) -> str:
         return (
             f"Amazon(isbn={self.isbn!r}, "
+            f"title={self.title!r}, "
+            f"subtitle={self.subtitle!r}, "
+            f"author={self.author!r}, "
+            f"description={self.description!r}, "
+            f"price={self.price!r}, "
             f"rating={self.rating!r}, "
             f"review_count={self.review_count!r}, "
+            f"page_count={self.page_count!r}, "
+            f"language={self.language!r}, "
+            f"publisher={self.publisher!r}, "
+            f"published_date={self.published_date!r}, "
             f"url={self.url!r})"
         )
 
