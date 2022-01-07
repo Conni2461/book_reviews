@@ -1,0 +1,55 @@
+CREATE TABLE "merged_books" (
+	"isbn"	TEXT NOT NULL UNIQUE,
+	"title"	TEXT NOT NULL,
+	"author"	TEXT NOT NULL,
+	"publisher"	TEXT,
+	"published_date"	TEXT,
+	"description"	TEXT,
+	"maturity_rating"	INTEGER,
+	"page_count"	INTEGER,
+	"score_nyt"	INTEGER,
+	"goodreads_rating"	REAL,
+	"goodreads_count"	INTEGER,
+	"amazon_rating"	REAL,
+	"amazon_count"	INTEGER,
+	"google_rating"	REAL,
+	"google_count"	INTEGER,
+	"book_image"	TEXT,
+	"amazon_link"	TEXT,
+	PRIMARY KEY("isbn")
+);
+
+INSERT INTO merged_books
+SELECT Amazon.isbn, NYT.title, NYT.author, NYT.publisher, GoogleBooks.published_date, GoogleBooks.description, GoogleBooks.maturity_rating,
+GoogleBooks.page_count, NYT.score, Goodreads.rating, Goodreads.rating_count, Amazon.rating, Amazon.review_count, GoogleBooks.average_rating, 
+GoogleBooks.rating_count, NYT.book_image, NYT.amazon_product_url 
+FROM Amazon, Goodreads, GoogleBooks, NYT
+WHERE Amazon.isbn = Goodreads.isbn
+AND Amazon.isbn = GoogleBooks.isbn
+AND Amazon.isbn = NYT.isbn;
+
+UPDATE merged_books 
+SET amazon_rating = NULL
+WHERE amazon_rating < 0
+
+CREATE TABLE aggregatedTitles AS
+SELECT  isbn, title, author, publisher, published_date, MAX(description) AS description, maturity_rating, page_count, SUM(score_nyt) AS score_nyt, AVG(goodreads_rating) AS goodreads_rating, MAX(goodreads_count) AS goodreads_count, AVG(amazon_rating) AS amazon_rating, MAX(amazon_count) AS amazon_count, AVG(google_rating) AS google_rating, MAX(google_count) AS google_count, book_image, amazon_link
+FROM merged_books
+GROUP BY title
+ORDER BY score_nyt DESC
+
+
+
+
+SELECT isbn, title, author, description, score_nyt, goodreads_rating, goodreads_count, amazon_rating, amazon_count
+FROM aggregatedTitles
+WHERE author = "Stephen King"
+AND goodreads_count > 100000
+AND amazon_count > 10000
+AND goodreads_rating > 4
+ORDER BY score_nyt DESC
+
+
+Group By title -> FIRST(isbn), FIRST(author), FIRST(publisher), FIRST(published_date), 
+
+SORT BY score_nyt DESC
