@@ -220,7 +220,7 @@ def normalizeScore():
             .first()
         )
         book.score = x[4]
-        session.commit()
+    session.commit()
 
 
 class NYT(Base):
@@ -333,7 +333,7 @@ class Goodreads(Base):
 
 
 class MergedBooksUpdated(Base):
-    __tablename__ = "merged_books_updated"
+    __tablename__ = "merged_books_aggregated_updated_finished"
 
     isbn = Column(String, primary_key=True)
     title = Column(String, nullable=False)
