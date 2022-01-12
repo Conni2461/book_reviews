@@ -4,12 +4,17 @@ click==8.0.3
 cssselect==1.1.0
 greenlet==1.1.2
 idna==3.3
+joblib==1.1.0
 lxml==4.6.4
+numpy==1.22.0
 parsel==1.6.0
 PyYAML==6.0
 requests==2.26.0
+scikit-learn==1.0.2
+scipy==1.7.3
 selectorlib==0.16.0
 six==1.16.0
 SQLAlchemy==1.4.26
+threadpoolctl==3.0.0
 urllib3==1.26.7
 w3lib==1.22.0

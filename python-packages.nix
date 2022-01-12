@@ -118,6 +118,20 @@ self: super: {
     nativeBuildInputs = [];
     propagatedBuildInputs = [];
   };
+  "joblib" = super.buildPythonPackage rec {
+    pname = "joblib";
+    version = "1.1.0";
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/3e/d5/0163eb0cfa0b673aa4fe1cd3ea9d8a81ea0f32e50807b0c295871e4aab2e/joblib-1.1.0-py2.py3-none-any.whl";
+      sha256 = "1xhg2vjs0pa6bw9w4q3h5ym04jn3v7855xw7hdgxkybz7jdi07zj";
+    };
+    format = "wheel";
+    doCheck = false;
+    buildInputs = [];
+    checkInputs = [];
+    nativeBuildInputs = [];
+    propagatedBuildInputs = [];
+  };
   "lxml" = super.buildPythonPackage rec {
     pname = "lxml";
     version = "4.6.4";
@@ -127,15 +141,25 @@ self: super: {
     };
     format = "setuptools";
     doCheck = false;
-    buildInputs = [
-      # these buildPackages are required
-      pkgs.zlib
-    ];
+    buildInputs = [];
+    checkInputs = [];
+    nativeBuildInputs = [];
+    propagatedBuildInputs = [];
+  };
+  "numpy" = super.buildPythonPackage rec {
+    pname = "numpy";
+    version = "1.22.0";
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/50/e1/9b0c184f04b8cf5f3c941ffa56fbcbe936888bdac9aa7ba6bae405ac752b/numpy-1.22.0.zip";
+      sha256 = "15skvdvx54jl52qq7prqd4fw2waaqx7b96nlzym9fry3i89f8md9";
+    };
+    format = "setuptools";
+    doCheck = false;
+    buildInputs = [];
     checkInputs = [];
     nativeBuildInputs = [
-      # these buildPackages are required
-      pkgs.libxml2
-      pkgs.libxslt
+      pkgs."cython"
+      pkgs."unzip"
     ];
     propagatedBuildInputs = [];
   };
@@ -177,6 +201,41 @@ self: super: {
       self."urllib3"
     ];
   };
+  "scikit-learn" = super.buildPythonPackage rec {
+    pname = "scikit-learn";
+    version = "1.0.2";
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/75/44/074b780d8ac0b0899937e9b8ba6d5d8873a71b99aa915219251ef85a8890/scikit-learn-1.0.2.tar.gz";
+      sha256 = "0rq70dp2bd63hp4rs692flqv1c94fp0s876k4r7n2js8lmchk1xm";
+    };
+    format = "setuptools";
+    doCheck = false;
+    buildInputs = [];
+    checkInputs = [];
+    nativeBuildInputs = [];
+    propagatedBuildInputs = [
+      self."joblib"
+      self."numpy"
+      self."scipy"
+      self."threadpoolctl"
+    ];
+  };
+  "scipy" = super.buildPythonPackage rec {
+    pname = "scipy";
+    version = "1.7.3";
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/61/67/1a654b96309c991762ee9bc39c363fc618076b155fe52d295211cf2536c7/scipy-1.7.3.tar.gz";
+      sha256 = "1gxsnw6viz2j3sm8ak2a8l7fcn4b2zm3kzfm8w57xxyyrzx7an5b";
+    };
+    format = "setuptools";
+    doCheck = false;
+    buildInputs = [];
+    checkInputs = [];
+    nativeBuildInputs = [];
+    propagatedBuildInputs = [
+      self."numpy"
+    ];
+  };
   "selectorlib" = super.buildPythonPackage rec {
     pname = "selectorlib";
     version = "0.16.0";
@@ -201,6 +260,20 @@ self: super: {
     src = fetchurl {
       url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl";
       sha256 = "0m02dsi8lvrjf4bi20ab6lm7rr6krz7pg6lzk3xjs2l9hqfjzfwa";
+    };
+    format = "wheel";
+    doCheck = false;
+    buildInputs = [];
+    checkInputs = [];
+    nativeBuildInputs = [];
+    propagatedBuildInputs = [];
+  };
+  "threadpoolctl" = super.buildPythonPackage rec {
+    pname = "threadpoolctl";
+    version = "3.0.0";
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/ff/fe/8aaca2a0db7fd80f0b2cf8a16a034d3eea8102d58ff9331d2aaf1f06766a/threadpoolctl-3.0.0-py3-none-any.whl";
+      sha256 = "04f2ikn3a90gkq1jwr6czh212dw0j7rjh2r01z1v3r4anjrybbag";
     };
     format = "wheel";
     doCheck = false;

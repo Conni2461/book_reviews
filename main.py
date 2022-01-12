@@ -94,7 +94,9 @@ def scrapeGoodreads():
 def fetchGoogleBooks():
     books = session.query(GoogleBooks).all()
     for book in books:
-        r = requests.get(f"https://www.googleapis.com/books/v1/volumes?q=isbn:{book.isbn}")
+        r = requests.get(
+            f"https://www.googleapis.com/books/v1/volumes?q=isbn:{book.isbn}"
+        )
         if not r.ok:
             continue
         data = r.json()
@@ -180,6 +182,45 @@ def exportToCsv():
     with open("books.csv", "w") as f:
         for book in books:
             f.write(f"{book.isbn}\n")
+
+
+def normalizeScore():
+    import numpy as np
+    from sklearn.impute import SimpleImputer
+    from sklearn import preprocessing
+
+    imputer = SimpleImputer(missing_values=np.nan, strategy="median")
+    books = session.query(MergedBooksUpdated).all()
+    x1 = np.empty((0, 4))
+    for book in books:
+        x1 = np.append(
+            x1,
+            np.array(
+                [
+                    [
+                        book.isbn,
+                        book.goodreads_rating,
+                        book.amazon_rating,
+                        book.google_rating,
+                    ]
+                ]
+            ),
+            axis=0,
+        )
+
+    imputer.fit(x1[:, 1:])
+    x1[:, 1:] = imputer.transform(x1[:, 1:])
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x_minmax = min_max_scaler.fit_transform(x1[:, 1:])
+    x1 = np.insert(x1, 4, x_minmax[:, 0] + x_minmax[:, 1] + x_minmax[:, 2], axis=1)
+    for x in x1:
+        book = (
+            session.query(MergedBooksUpdated)
+            .filter(MergedBooksUpdated.isbn == x[0])
+            .first()
+        )
+        book.score = x[4]
+        session.commit()
 
 
 class NYT(Base):
@@ -291,9 +332,35 @@ class Goodreads(Base):
         )
 
 
+class MergedBooksUpdated(Base):
+    __tablename__ = "merged_books_updated"
+
+    isbn = Column(String, primary_key=True)
+    title = Column(String, nullable=False)
+    author = Column(String, nullable=False)
+    publisher = Column(String)
+    published_date = Column(String)
+    description = Column(String)
+    maturity_rating = Column(Integer)
+    book_type = Column(String)
+    price = Column(Float)
+    page_count = Column(Integer)
+    score_nyt = Column(Integer)
+    goodreads_rating = Column(Float)
+    goodreads_count = Column(Integer)
+    amazon_rating = Column(Float)
+    amazon_count = Column(Integer)
+    google_rating = Column(Float)
+    google_count = Column(Integer)
+    book_image = Column(String)
+    amazon_link = Column(String)
+    score = Column(Float)
+
+
 Base.metadata.create_all(engine)
 # getAllNYT()
 # exportToCsv()
 # scrapeAmazon()
 # scrapeGoodreads()
-fetchGoogleBooks()
+# fetchGoogleBooks()
+normalizeScore()
