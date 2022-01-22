@@ -19,7 +19,7 @@ found under `./scripts`. You might need python packages which are specified
 unter `./requirements.txt`
 
 ## Run backend/frontend
-After pulling repository on Ubuntu 20.04: 
+After pulling repository on Ubuntu 20.04 (other version should work, this is just what we tested): 
 
 1. Install Rust for your machine. https://www.rust-lang.org/tools/install  
 2. Install C compiler if not present (possibly with `sudo apt install build-essential` or `sudo apt install gcc-multilib`)
