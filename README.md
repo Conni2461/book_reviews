@@ -19,10 +19,10 @@ found under `./scripts`. You might need python packages which are specified
 unter `./requirements.txt`
 
 ## Run backend/frontend
-After pulling repository: 
+After pulling repository on Ubuntu 20.04: 
 
-1. Install Rust for your machine. https://www.rust-lang.org/tools/install
+1. Install Rust for your machine. https://www.rust-lang.org/tools/install  
 2. Install C compiler if not present (possibly with `sudo apt install build-essential` or `sudo apt install gcc-multilib`)
 3. Install Sqplite with `sudo apt install libsqlite3-dev`if not present
-4. `cargo run` 
-5. should run on `localhost:8080`
+4. In repository folder: `cargo run` 
+5. should run on `localhost:8080` in browser
