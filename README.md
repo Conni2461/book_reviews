@@ -1,30 +1,25 @@
 # book_reviews
 
+Information Integration class Project
+
 ## Application
 
 >Goal: Map New York Time's best sellers to Goodreads Reviews.
 
-
-## TODO
-
-- ~~split tables~~
-- ~~scrape missing values amazon / goodreads~~ -> few missing "e-books?" from goodreads
-- ~~scrape google api~~ -> missing half the books, make attributes optional, rating, ratingcount, pages, Description, maturity rating 
-- merge tables (drop url from amazon, google attributes above) 
-- aggregate duplicates (normalize values)
-
-
-
-
 ## Idea:
 
-Take **Combined Print and E-Book Fiction** and **Combined Print and E-Book Nonfiction** and calculate a score for each book according to how long it was on the list and at what rank it had.
+Take **Combined Print and E-Book Fiction** and **Combined Print and E-Book
+Nonfiction** and calculate a score for each book according to how long it was
+on the list and at what rank it had.
 
-## Run
+## Run scripts
 
-```sh
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python main.py
-```
+Python and jupyter notebook scripts to generate the current database can be
+found under `./scripts`. You might need python packages which are specified
+unter `./requirements.txt`
+
+## Run backend/frontend
+
+1. Install Rust for your machine. https://www.rust-lang.org/tools/install
+2. `cargo run`
+3. should run on `localhost:8080`
