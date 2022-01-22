@@ -13,7 +13,6 @@ use serde_json::json;
 use std::env;
 
 use diesel::r2d2::{self, ConnectionManager};
-use diesel::sql_types::Text;
 use diesel::{prelude::*, sql_query};
 use dotenv::dotenv;
 
@@ -37,39 +36,41 @@ pub struct Search {
   search: Option<String>,
 }
 
-fn get_books(
-  pool: web::Data<Pool>,
-  query: Search,
-) -> Result<(Vec<Book>, i64), diesel::result::Error> {
-  let conn = pool
-    .get()
-    .expect("Couldn't get database connection from pool");
-  let mut results = match &query.search {
-    Some(s) => sql_query(
-      "WITH ranked_books AS (
-          SELECT *, RANK () OVER (
-            ORDER BY score DESC
-          ) rank FROM merged_books_aggregated_updated_finished
-        )
-        SELECT * FROM ranked_books
-        WHERE title LIKE ?
-        OR author Like ?
-        ORDER BY score DESC LIMIT 10",
-    )
-    .bind::<Text, _>(format!("%{}%", s))
-    .bind::<Text, _>(format!("%{}%", s))
-    .load::<Book>(&conn)?,
-    None => sql_query(
-      "SELECT *, RANK () OVER (
-          ORDER BY score DESC
-        ) rank FROM merged_books_aggregated_updated_finished
-        ORDER BY score DESC
-        LIMIT 10",
-    )
-    .load::<Book>(&conn)?,
-  };
+#[derive(Deserialize, Debug, Clone)]
+pub struct ExtendedSearch {
+  s1v: Option<String>,
+  s1c: Option<String>,
+  s1: Option<String>,
 
-  for b in results.iter_mut() {
+  s2s: Option<String>,
+  s2v: Option<String>,
+  s2c: Option<String>,
+  s2: Option<String>,
+
+  s3s: Option<String>,
+  s3v: Option<String>,
+  s3c: Option<String>,
+  s3: Option<String>,
+}
+
+impl ExtendedSearch {
+  fn has_value(&self) -> bool {
+    self.s1v.is_some()
+      || self.s1c.is_some()
+      || self.s1.is_some()
+      || self.s2s.is_some()
+      || self.s2v.is_some()
+      || self.s2c.is_some()
+      || self.s2.is_some()
+      || self.s3s.is_some()
+      || self.s3v.is_some()
+      || self.s3c.is_some()
+      || self.s3.is_some()
+  }
+}
+
+fn format_books(books: &mut Vec<Book>) {
+  for b in books.iter_mut() {
     if let Some(t) = &b.title {
       b.title = Some(t.split('\n').take(1).collect());
     };
@@ -82,26 +83,60 @@ fn get_books(
       b.publisher = Some(p.split('\n').take(1).collect());
     };
   }
+}
 
-  let count = match &query.search {
-    Some(s) => sql_query(
-      "SELECT COUNT(*) as count FROM merged_books_aggregated_updated_finished
-      WHERE title LIKE ?
-      OR author Like ?",
+fn get_books(
+  pool: web::Data<Pool>,
+  where_query: &str,
+) -> Result<(Vec<Book>, i64), diesel::result::Error> {
+  let conn = pool
+    .get()
+    .expect("Couldn't get database connection from pool");
+
+  info!("{}", where_query);
+  let mut results = sql_query(format!(
+    "
+    WITH ranked_books AS (
+      SELECT *, RANK () OVER (
+        ORDER BY score DESC
+      ) rank FROM merged_books_aggregated_updated_finished
     )
-    .bind::<Text, _>(format!("%{}%", s))
-    .bind::<Text, _>(format!("%{}%", s))
-    .load::<Count>(&conn)?,
-    None => sql_query(
-      "SELECT COUNT(*) as count FROM merged_books_aggregated_updated_finished",
-    )
-    .load::<Count>(&conn)?,
-  }
+    SELECT * FROM ranked_books
+    {}
+    ORDER BY score DESC LIMIT 10
+  ",
+    where_query
+  ))
+  .load::<Book>(&conn)?;
+  format_books(&mut results);
+
+  let count = sql_query(format!(
+    "
+      SELECT COUNT(*) as count FROM merged_books_aggregated_updated_finished
+      {}
+      ORDER BY score DESC LIMIT 10
+    ",
+    where_query
+  ))
+  .load::<Count>(&conn)?
   .pop()
   .expect("No rows")
   .count;
 
   Ok((results, count))
+}
+
+fn get_books_simple(
+  pool: web::Data<Pool>,
+  query: Search,
+) -> Result<(Vec<Book>, i64), diesel::result::Error> {
+  match &query.search {
+    Some(s) => get_books(
+      pool,
+      &format!("WHERE title LIKE '%{}%' OR author LIKE '%{}%'", s, s),
+    ),
+    None => get_books(pool, ""),
+  }
 }
 
 async fn index(
@@ -112,7 +147,7 @@ async fn index(
   let query = query.into_inner();
   let search = query.clone();
   Ok(
-    web::block(move || get_books(db, search))
+    web::block(move || get_books_simple(db, search))
       .await?
       .map(|(books, count)| {
         let current = std::cmp::min(count, 10);
@@ -133,10 +168,53 @@ async fn index(
   )
 }
 
+fn get_books_extended(
+  pool: web::Data<Pool>,
+  query: ExtendedSearch,
+) -> Result<(Vec<Book>, i64), diesel::result::Error> {
+  // TODO check for wrong input
+  let mut where_query = String::from("WHERE ");
+  if query.s1v.is_some() {
+    where_query = where_query
+      + &query.s1v.unwrap()
+      + " "
+      + &query.s1c.unwrap()
+      + " '"
+      + &query.s1.unwrap()
+      + "'"
+  }
+  if query.s2s.is_some() && query.s2s.as_ref().unwrap() != "" {
+    where_query = where_query
+      + " "
+      + &query.s2s.unwrap()
+      + " "
+      + &query.s2v.unwrap()
+      + " "
+      + &query.s2c.unwrap()
+      + " '"
+      + &query.s2.unwrap()
+      + "'";
+  }
+  if query.s3s.is_some() && query.s3s.as_ref().unwrap() != "" {
+    where_query = where_query
+      + " "
+      + &query.s3s.unwrap()
+      + " "
+      + &query.s3v.unwrap()
+      + " "
+      + &query.s3c.unwrap()
+      + " '"
+      + &query.s3.unwrap()
+      + "'";
+  }
+  get_books(pool, &where_query)
+}
+
 async fn search(
-  _db: web::Data<Pool>,
+  db: web::Data<Pool>,
   hb: web::Data<Handlebars<'_>>,
-) -> HttpResponse {
+  query: web::Query<ExtendedSearch>,
+) -> Result<HttpResponse, Error> {
   let data = json!({
     "logic": [
       { "value": "", "text": "--Please choose an option--" },
@@ -146,10 +224,10 @@ async fn search(
     ],
     "option": [
       { "value": "", "text": "" },
-      { "value": "Title", "text": "Title" },
-      { "value": "Author", "text": "Author" },
-      { "value": "Publisher", "text": "Publisher" },
-      { "value": "Date", "text": "Date" },
+      { "value": "title", "text": "Title" },
+      { "value": "author", "text": "Author" },
+      { "value": "publisher", "text": "Publisher" },
+      { "value": "date", "text": "Date" },
       { "value": "ISBN", "text": "ISBN" },
       { "value": "nytscore", "text": "nytscore" },
       { "value": "score", "text": "score" },
@@ -160,8 +238,35 @@ async fn search(
       { "value": ">", "text": ">" },
     ],
   });
-  let body = hb.render("search", &data).unwrap();
-  HttpResponse::Ok().body(body)
+
+  let query = query.into_inner();
+  if !query.has_value() {
+    let body = hb.render("search", &data).unwrap();
+    Ok(HttpResponse::Ok().body(body))
+  } else {
+    info!("{:?}", query);
+    let search = query.clone();
+    Ok(
+      web::block(move || get_books_extended(db, search))
+        .await?
+        .map(|(books, count)| {
+          let current = std::cmp::min(count, 10);
+          info!("Showing {} out of {}", current, count);
+          let data = json!({
+            "count": { "curr": current, "total": count },
+            "books": books,
+            "query": ""
+          });
+
+          let body = hb.render("index", &data).unwrap();
+          HttpResponse::Ok().body(body)
+        })
+        .map_err(|e| {
+          error!("{}", e);
+          MyError(String::from("oh no"))
+        })?,
+    )
+  }
 }
 
 type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
