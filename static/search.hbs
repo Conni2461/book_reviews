@@ -1,0 +1,80 @@
+{{#*inline "page"}}
+<div class="container">
+  <form>
+    <div class="row">
+      <div class="col"></div>
+      <div class="col">
+        <select name="s1v" id="s1v">
+          {{#each option as |o|}}
+            <option value={{o.value}}>{{o.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col">
+        <select name="s1c" id="s1c">
+          {{#each compare as |c|}}
+            <option value={{c.value}}>{{c.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col">
+        <input id="s1">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <select name="s2s" id="s2s">
+          {{#each logic as |l|}}
+            <option value={{l.value}}>{{l.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col">
+        <select name="s2v" id="s2v">
+          {{#each option as |o|}}
+            <option value={{o.value}}>{{o.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col">
+        <select name="s2c" id="s2c">
+          {{#each compare as |c|}}
+            <option value={{c.value}}>{{c.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col">
+        <input id="s2">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <select name="s3s" id="s3s">
+          {{#each logic as |l|}}
+            <option value={{l.value}}>{{l.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col">
+        <select name="s3v" id="s3v">
+          {{#each option as |o|}}
+            <option value={{o.value}}>{{o.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col">
+        <select name="s3c" id="s3c">
+          {{#each compare as |c|}}
+            <option value={{c.value}}>{{c.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col">
+        <input id="s3">
+      </div>
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+{{/inline}}
+{{> base}}

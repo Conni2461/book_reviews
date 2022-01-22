@@ -1,0 +1,106 @@
+{{#*inline "page"}}
+<div class="container">
+  {{#each books as |b|}}
+    <div class="row">
+      <h4>{{b.rank}}. {{b.title}}</h4>
+      <div class="col">
+        <img src="{{b.book_image}}" style="width: 250px;" />
+      </div>
+      <div class="col">
+        <h5>From {{b.author}} ({{b.published_date}})</h5>
+        <div class="box">
+          <input type="checkbox" id="expanded-{{@index}}">
+          <p>{{b.description}}</p>
+          <label for="expanded-{{@index}}" role="button">read more</label>
+        </div>
+
+        <div class="card-group">
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title">Price</h5>
+              <p class="card-text">${{distanceFixed b.price}}<br>{{b.book_type}}</p>
+            </div>
+          </div>
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title">Publisher</h5>
+              <p class="card-text">{{b.publisher}}</p>
+            </div>
+          </div>
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title">Page Count</h5>
+              <p class="card-text">{{b.page_count}}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-group">
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title">NYT</h5>
+              <p class="card-text">{{b.score_nyt}} Points</p>
+            </div>
+          </div>
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title">Amazon</h5>
+              <p class="card-text">★{{distanceFixed b.amazon_rating}}<br>{{b.amazon_count}} ratings</p>
+            </div>
+          </div>
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title">GoodReads</h5>
+              <p class="card-text">★{{distanceFixed b.goodreads_rating}}<br>{{b.goodreads_count}} ratings</p>
+            </div>
+          </div>
+          <div class="card text-center">
+            <div class="card-body">
+              <h5 class="card-title">Google</h5>
+              <p class="card-text">★{{distanceFixed b.google_rating}}<br>{{b.google_count}} ratings</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    {{#if (not @last)}}
+      <hr/>
+    {{/if}}
+  {{/each}}
+
+  {{#if books}}
+    <nav>
+      <div class="container d-flex flex-sm-column justify-content-between py-3">
+        <div class="row py-4 align-content-between flex-wrap align-items-baseline">
+          <div class="col justify-content-start">
+            <p class="text-secondary">{{ count.curr }} out of {{ count.total }}</p>
+          </div>
+          <div class="col justify-content-end">
+            <ul class="pagination justify-content-end">
+              <li class="page-item disabled">
+                <a class="page-link">Previous</a>
+              </li>
+              <li class="page-item"><a class="page-link" href="#">1</a></li>
+              <li class="page-item"><a class="page-link" href="#">2</a></li>
+              <li class="page-item"><a class="page-link" href="#">3</a></li>
+              <li class="page-item">
+                <a class="page-link" href="#">Next</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+  {{else}}
+    </nav>
+      <div class="container d-flex justify-content-center py-3">
+        <div class="row py-4 align-content-between flex-wrap align-items-baseline">
+          <p class="text-secondary">No results found</p>
+        </div>
+      </div>
+    </nav>
+  {{/if}}
+</div>
+{{/inline}}
+{{> base}}
