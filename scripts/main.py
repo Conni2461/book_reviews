@@ -39,7 +39,7 @@ Base = declarative_base()
 Base.metadata.create_all(engine)
 session = Session(engine)
 
-NYT_KEY = "diFVGXgg4M9rd0ee3sUDSXCx2L32tHOY"
+NYT_KEY = "TODO"
 
 if NYT_KEY == "TODO":
     print("Don't forget to put in your NYT_KEY")
