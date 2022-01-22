@@ -21,5 +21,5 @@ unter `./requirements.txt`
 ## Run backend/frontend
 
 1. Install Rust for your machine. https://www.rust-lang.org/tools/install
-2. `cargo run`
+2. `cargo run` (you also need to have a c compiler installed, for example gcc with `sudo apt install build-essential`)
 3. should run on `localhost:8080`
