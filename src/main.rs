@@ -103,7 +103,7 @@ fn get_books(
     )
     SELECT * FROM ranked_books
     {}
-    ORDER BY score DESC LIMIT 10
+    ORDER BY score DESC LIMIT 50
   ",
     where_query
   ))
@@ -114,7 +114,7 @@ fn get_books(
     "
       SELECT COUNT(*) as count FROM merged_books_aggregated_updated_finished
       {}
-      ORDER BY score DESC LIMIT 10
+      ORDER BY score DESC LIMIT 50
     ",
     where_query
   ))
@@ -150,7 +150,7 @@ async fn index(
     web::block(move || get_books_simple(db, search))
       .await?
       .map(|(books, count)| {
-        let current = std::cmp::min(count, 10);
+        let current = std::cmp::min(count, 50);
         info!("Showing {} out of {}", current, count);
         let data = json!({
           "count": { "curr": current, "total": count },
@@ -250,7 +250,7 @@ async fn search(
       web::block(move || get_books_extended(db, search))
         .await?
         .map(|(books, count)| {
-          let current = std::cmp::min(count, 10);
+          let current = std::cmp::min(count, 50);
           info!("Showing {} out of {}", current, count);
           let data = json!({
             "count": { "curr": current, "total": count },
