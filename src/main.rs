@@ -8,7 +8,7 @@ use handlebars::{
   Context, Handlebars, Helper, HelperResult, JsonRender, Output, RenderContext,
   RenderError,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::env;
 
@@ -20,6 +20,8 @@ use log::{error, info};
 
 mod db;
 use db::models::{Book, Count};
+
+const COUNT_PER_PAGE: i64 = 20;
 
 #[derive(Debug)]
 pub struct MyError(String); // <-- needs debug and display
@@ -34,6 +36,7 @@ impl ResponseError for MyError {}
 #[derive(Deserialize, Debug, Clone)]
 pub struct Search {
   search: Option<String>,
+  page: Option<i64>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -51,6 +54,29 @@ pub struct ExtendedSearch {
   s3v: Option<String>,
   s3c: Option<String>,
   s3: Option<String>,
+}
+
+#[derive(Serialize, Debug)]
+struct CountInformation {
+  curr: i64,
+  total: i64,
+  sindex: i64,
+  eindex: i64,
+}
+
+impl CountInformation {
+  pub fn new(sindex: i64, count: i64) -> Self {
+    let current = std::cmp::min(count, COUNT_PER_PAGE);
+    let mut eindex = sindex + COUNT_PER_PAGE - 1;
+    eindex = std::cmp::min(eindex, count);
+
+    Self {
+      curr: current,
+      total: count,
+      sindex,
+      eindex,
+    }
+  }
 }
 
 impl ExtendedSearch {
@@ -88,10 +114,21 @@ fn format_books(books: &mut Vec<Book>) {
 fn get_books(
   pool: web::Data<Pool>,
   where_query: &str,
-) -> Result<(Vec<Book>, i64), diesel::result::Error> {
+  page: Option<i64>,
+) -> Result<(Vec<Book>, i64, i64), diesel::result::Error> {
   let conn = pool
     .get()
     .expect("Couldn't get database connection from pool");
+
+  let start_limit = match page {
+    Some(p) => ((p - 1) * COUNT_PER_PAGE) + 1,
+    None => 1,
+  };
+  info!(
+    "Showing {} -> {}",
+    start_limit,
+    start_limit + COUNT_PER_PAGE - 1
+  );
 
   info!("{}", where_query);
   let mut results = sql_query(format!(
@@ -103,9 +140,9 @@ fn get_books(
     )
     SELECT * FROM ranked_books
     {}
-    ORDER BY score DESC LIMIT 50
+    ORDER BY score DESC LIMIT {}, {}
   ",
-    where_query
+    where_query, start_limit, COUNT_PER_PAGE
   ))
   .load::<Book>(&conn)?;
   format_books(&mut results);
@@ -114,7 +151,7 @@ fn get_books(
     "
       SELECT COUNT(*) as count FROM merged_books_aggregated_updated_finished
       {}
-      ORDER BY score DESC LIMIT 50
+      ORDER BY score DESC
     ",
     where_query
   ))
@@ -123,19 +160,20 @@ fn get_books(
   .expect("No rows")
   .count;
 
-  Ok((results, count))
+  Ok((results, start_limit, count))
 }
 
 fn get_books_simple(
   pool: web::Data<Pool>,
   query: Search,
-) -> Result<(Vec<Book>, i64), diesel::result::Error> {
+) -> Result<(Vec<Book>, i64, i64), diesel::result::Error> {
   match &query.search {
     Some(s) => get_books(
       pool,
       &format!("WHERE title LIKE '%{}%' OR author LIKE '%{}%'", s, s),
+      query.page,
     ),
-    None => get_books(pool, ""),
+    None => get_books(pool, "", query.page),
   }
 }
 
@@ -149,13 +187,15 @@ async fn index(
   Ok(
     web::block(move || get_books_simple(db, search))
       .await?
-      .map(|(books, count)| {
-        let current = std::cmp::min(count, 50);
-        info!("Showing {} out of {}", current, count);
+      .map(|(books, sindex, count)| {
         let data = json!({
-          "count": { "curr": current, "total": count },
+          "count": CountInformation::new(sindex, count),
           "books": books,
           "query": query.search,
+          "base_href": match query.search {
+            Some(s) => format!("/?search={}", s),
+            None => "/".into(),
+          }
         });
 
         let body = hb.render("index", &data).unwrap();
@@ -171,7 +211,7 @@ async fn index(
 fn get_books_extended(
   pool: web::Data<Pool>,
   query: ExtendedSearch,
-) -> Result<(Vec<Book>, i64), diesel::result::Error> {
+) -> Result<(Vec<Book>, i64, i64), diesel::result::Error> {
   // TODO check for wrong input
   let mut where_query = String::from("WHERE ");
   if query.s1v.is_some() {
@@ -207,7 +247,7 @@ fn get_books_extended(
       + &query.s3.unwrap()
       + "'";
   }
-  get_books(pool, &where_query)
+  get_books(pool, &where_query, None)
 }
 
 async fn search(
@@ -249,13 +289,14 @@ async fn search(
     Ok(
       web::block(move || get_books_extended(db, search))
         .await?
-        .map(|(books, count)| {
-          let current = std::cmp::min(count, 50);
-          info!("Showing {} out of {}", current, count);
+        .map(|(books, sindex, count)| {
           let data = json!({
-            "count": { "curr": current, "total": count },
+            "count": CountInformation::new(sindex, count),
             "books": books,
             "query": ""
+            // TODO(conni2461): pagination isn't implemented for search yet.
+            // And the way i've written all this so far, will make it challenging
+            // SAD LIFE
           });
 
           let body = hb.render("index", &data).unwrap();
@@ -314,6 +355,58 @@ async fn main() -> std::io::Result<()> {
           }
           None => Err(RenderError::new("param not found")),
         }
+      },
+    ),
+  );
+
+  handlebars.register_helper(
+    "paging",
+    Box::new(
+      |h: &Helper,
+       _r: &Handlebars,
+       _: &Context,
+       _rc: &mut RenderContext,
+       out: &mut dyn Output|
+       -> HelperResult {
+        let p0 = h.param(0);
+        let p1 = h.param(1);
+        let p2 = h.param(2);
+        if p0.is_none() || p1.is_none() || p2.is_none() {
+          return Err(RenderError::new("param not found"));
+        }
+
+        let mut base_href = String::from(p0.unwrap().value().as_str().unwrap());
+        let _current = p1.unwrap().value().as_i64().unwrap();
+        let _total = p2.unwrap().value().as_i64().unwrap();
+
+        if base_href.starts_with("/?") {
+          base_href.push_str("&page=");
+        } else {
+          base_href.push_str("?page=");
+        }
+
+        out.write(
+          format!(
+            r###"
+          <div class="col justify-content-end">
+            <ul class="pagination justify-content-end">
+              <li class="page-item disabled">
+                <a class="page-link">Previous</a>
+              </li>
+              <li class="page-item"><a class="page-link" href="{}1">1</a></li>
+              <li class="page-item"><a class="page-link" href="{}2">2</a></li>
+              <li class="page-item"><a class="page-link" href="{}3">3</a></li>
+              <li class="page-item">
+                <a class="page-link" href="#">Next</a>
+              </li>
+            </ul>
+          </div>
+          "###,
+            base_href, base_href, base_href
+          )
+          .as_str(),
+        )?;
+        Ok(())
       },
     ),
   );
