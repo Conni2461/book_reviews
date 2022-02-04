@@ -268,7 +268,7 @@ async fn search(
 ) -> Result<HttpResponse, Error> {
   let data = json!({
     "logic": [
-      { "value": "", "text": "--Please choose an option--" },
+      { "value": "", "text": "" },
       { "value": "AND", "text": "AND" },
       { "value": "OR", "text": "OR" },
       { "value": "NOT", "text": "NOT" },
