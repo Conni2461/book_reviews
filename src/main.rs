@@ -126,6 +126,20 @@ fn get_books(
     None => 0,
   };
 
+  info!(
+    "
+    WITH ranked_books AS (
+      SELECT *, RANK () OVER (
+        ORDER BY score DESC
+      ) rank FROM merged_books_aggregated_updated_finished
+    )
+    SELECT * FROM ranked_books
+    {}
+    ORDER BY score DESC LIMIT {}, {}
+  ",
+    where_query, start_limit, COUNT_PER_PAGE
+  );
+
   let mut results = sql_query(format!(
     "
     WITH ranked_books AS (
@@ -209,14 +223,18 @@ fn as_query(
 ) -> String {
   let mut res = String::new();
   if let Some(s) = con {
-    res = res + " " + s.as_str();
+    res = res + " " + s.as_str() + " ";
   }
 
   let comparision = c.unwrap();
-  if comparision == "=" {
-    res = res + &lhs.unwrap() + " LIKE '%" + &rhs.unwrap() + "%'";
+  let column = lhs.unwrap();
+
+  if column == "score" || column == "score_nyt" {
+    res = res + &column + " " + &comparision + " " + &rhs.unwrap();
+  } else if comparision == "=" {
+    res = res + &column + " LIKE '%" + &rhs.unwrap() + "%'";
   } else {
-    res = res + &lhs.unwrap() + " " + &comparision + " '" + &rhs.unwrap() + "'";
+    res = res + &column + " " + &comparision + " '" + &rhs.unwrap() + "'";
   }
 
   res
@@ -260,10 +278,10 @@ async fn search(
       { "value": "title", "text": "Title" },
       { "value": "author", "text": "Author" },
       { "value": "publisher", "text": "Publisher" },
-      { "value": "date", "text": "Date" },
-      { "value": "ISBN", "text": "ISBN" },
-      { "value": "nytscore", "text": "nytscore" },
-      { "value": "score", "text": "score" },
+      { "value": "published_date", "text": "Published Date" },
+      { "value": "isbn", "text": "ISBN" },
+      { "value": "score_nyt", "text": "New York Times Score" },
+      { "value": "score", "text": "Score" },
     ],
     "compare": [
       { "value": "=", "text": "=" },
