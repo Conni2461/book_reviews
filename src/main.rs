@@ -54,27 +54,28 @@ pub struct ExtendedSearch {
   s3v: Option<String>,
   s3c: Option<String>,
   s3: Option<String>,
+
+  page: Option<i64>,
 }
 
 #[derive(Serialize, Debug)]
 struct CountInformation {
-  curr: i64,
   total: i64,
   sindex: i64,
   eindex: i64,
+  page: i64,
 }
 
 impl CountInformation {
-  pub fn new(sindex: i64, count: i64) -> Self {
-    let current = std::cmp::min(count, COUNT_PER_PAGE);
+  pub fn new(sindex: i64, count: i64, page: Option<i64>) -> Self {
     let mut eindex = sindex + COUNT_PER_PAGE - 1;
     eindex = std::cmp::min(eindex, count);
 
     Self {
-      curr: current,
       total: count,
-      sindex,
+      sindex: sindex + 1,
       eindex,
+      page: page.unwrap_or(1),
     }
   }
 }
@@ -121,8 +122,8 @@ fn get_books(
     .expect("Couldn't get database connection from pool");
 
   let start_limit = match page {
-    Some(p) => ((p - 1) * COUNT_PER_PAGE) + 1,
-    None => 1,
+    Some(p) => (p - 1) * COUNT_PER_PAGE,
+    None => 0,
   };
   info!(
     "Showing {} -> {}",
@@ -130,7 +131,6 @@ fn get_books(
     start_limit + COUNT_PER_PAGE - 1
   );
 
-  info!("{}", where_query);
   let mut results = sql_query(format!(
     "
     WITH ranked_books AS (
@@ -181,6 +181,7 @@ async fn index(
   db: web::Data<Pool>,
   hb: web::Data<Handlebars<'_>>,
   query: web::Query<Search>,
+  req: actix_web::HttpRequest,
 ) -> Result<HttpResponse, Error> {
   let query = query.into_inner();
   let search = query.clone();
@@ -189,13 +190,10 @@ async fn index(
       .await?
       .map(|(books, sindex, count)| {
         let data = json!({
-          "count": CountInformation::new(sindex, count),
+          "count": CountInformation::new(sindex, count, query.page),
           "books": books,
           "query": query.search,
-          "base_href": match query.search {
-            Some(s) => format!("/?search={}", s),
-            None => "/".into(),
-          }
+          "uri": req.uri().path_and_query().unwrap().as_str()
         });
 
         let body = hb.render("index", &data).unwrap();
@@ -254,6 +252,7 @@ async fn search(
   db: web::Data<Pool>,
   hb: web::Data<Handlebars<'_>>,
   query: web::Query<ExtendedSearch>,
+  req: actix_web::HttpRequest,
 ) -> Result<HttpResponse, Error> {
   let data = json!({
     "logic": [
@@ -284,19 +283,16 @@ async fn search(
     let body = hb.render("search", &data).unwrap();
     Ok(HttpResponse::Ok().body(body))
   } else {
-    info!("{:?}", query);
     let search = query.clone();
     Ok(
       web::block(move || get_books_extended(db, search))
         .await?
         .map(|(books, sindex, count)| {
           let data = json!({
-            "count": CountInformation::new(sindex, count),
+            "count": CountInformation::new(sindex, count, query.page),
             "books": books,
-            "query": ""
-            // TODO(conni2461): pagination isn't implemented for search yet.
-            // And the way i've written all this so far, will make it challenging
-            // SAD LIFE
+            "query": "",
+            "uri": req.uri().path_and_query().unwrap().as_str()
           });
 
           let body = hb.render("index", &data).unwrap();
@@ -375,37 +371,89 @@ async fn main() -> std::io::Result<()> {
           return Err(RenderError::new("param not found"));
         }
 
-        let mut base_href = String::from(p0.unwrap().value().as_str().unwrap());
-        let _current = p1.unwrap().value().as_i64().unwrap();
-        let _total = p2.unwrap().value().as_i64().unwrap();
+        let mut uri = String::from(p0.unwrap().value().as_str().unwrap());
+        let page = p1.unwrap().value().as_i64().unwrap();
+        let total = p2.unwrap().value().as_i64().unwrap();
+        let last_page = (total as f64 / COUNT_PER_PAGE as f64).ceil() as i64;
 
-        if base_href.starts_with("/?") {
-          base_href.push_str("&page=");
+        // remove page=... from the uri because it needs to be replaced
+        if let Some(mut f) = uri.find("page=") {
+          f -= 1; // also remove & || ?
+          loop {
+            uri.remove(f);
+            if uri.len() == f || uri.chars().nth(f).unwrap() == '&' {
+              break;
+            }
+          }
+        }
+        if uri.contains("/?") {
+          uri.push_str("&page=");
         } else {
-          base_href.push_str("?page=");
+          uri.push_str("?page=");
+        }
+
+        // previous 1, (current) m, ..., n, next
+        // write beginning
+        out.write(
+          format!(
+            r###"
+              <div class="col justify-content-end">
+                <ul class="pagination justify-content-end">
+                  <li class="page-item {2}">
+                    <a class="page-link" href="{0}{1}">Previous</a>
+                  </li>
+                  <li class="page-item {3}"><a class="page-link" href="{0}1">1</a></li>
+            "###, uri, page - 1, if page == 1 { "disabled" } else { "" },
+                                 if page == 1 { "active" } else { "" }
+          ).as_str()
+        )?;
+
+        // and we have more than 1 page
+        if last_page > 1 {
+          if page < last_page / 2 {
+            out.write(
+              format!(
+                r###"
+                  <li class="page-item {3}"><a class="page-link" href="{0}{1}">{1}</a></li>
+                  <li class="page-item disabled"><a class="page-link">...</a></li>
+                  <li class="page-item"><a class="page-link" href="{0}{2}">{2}</a></li>
+                "###, uri, if page == 1 { page + 1 } else { page }, last_page,
+                           if page != 1 { "active" } else { "" }
+              ).as_str()
+            )?;
+          } else {
+            out.write(
+              format!(
+                r###"
+                  <li class="page-item disabled"><a class="page-link">...</a></li>
+                  <li class="page-item {3}"><a class="page-link" href="{0}{1}">{1}</a></li>
+                  <li class="page-item {4}"><a class="page-link" href="{0}{2}">{2}</a></li>
+                "###, uri, if page == last_page { page - 1 } else { page }, last_page,
+                           if page != last_page { "active" } else { "" },
+                           if page == last_page { "active" } else { "" },
+              ).as_str()
+            )?;
+          }
         }
 
         out.write(
           format!(
             r###"
-          <div class="col justify-content-end">
-            <ul class="pagination justify-content-end">
-              <li class="page-item disabled">
-                <a class="page-link">Previous</a>
+              <li class="page-item {1}">
+                <a class="page-link" href="{0}{2}">Next</a>
               </li>
-              <li class="page-item"><a class="page-link" href="{}1">1</a></li>
-              <li class="page-item"><a class="page-link" href="{}2">2</a></li>
-              <li class="page-item"><a class="page-link" href="{}3">3</a></li>
-              <li class="page-item">
-                <a class="page-link" href="#">Next</a>
-              </li>
-            </ul>
-          </div>
           "###,
-            base_href, base_href, base_href
+            uri, if page == last_page { "disabled" } else { "" }, page + 1
           )
           .as_str(),
         )?;
+
+        // write end
+        out.write(
+            r###"
+            </ul>
+          </div>
+            "###)?;
         Ok(())
       },
     ),
