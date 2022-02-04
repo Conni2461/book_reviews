@@ -269,6 +269,12 @@ async fn search(
   }
 }
 
+async fn stats(hb: web::Data<Handlebars<'_>>) -> Result<HttpResponse, Error> {
+  let data = json!({});
+  let body = hb.render("stats", &data).unwrap();
+  Ok(HttpResponse::Ok().body(body))
+}
+
 type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
 #[actix_web::main]
@@ -319,6 +325,9 @@ async fn main() -> std::io::Result<()> {
     .register_template_file("search", "./static/search.hbs")
     .unwrap();
   handlebars
+    .register_template_file("stats", "./static/stats.hbs")
+    .unwrap();
+  handlebars
     .register_template_file("base", "./static/base.hbs")
     .unwrap();
   let handlebars_ref = web::Data::new(handlebars);
@@ -332,6 +341,7 @@ async fn main() -> std::io::Result<()> {
       .service(Files::new("/static", "static").show_files_listing())
       .route("/", web::get().to(index))
       .route("/search", web::get().to(search))
+      .route("/stats", web::get().to(stats))
   })
   .bind("127.0.0.1:8080")?
   .run()
