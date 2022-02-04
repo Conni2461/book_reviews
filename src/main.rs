@@ -125,11 +125,6 @@ fn get_books(
     Some(p) => (p - 1) * COUNT_PER_PAGE,
     None => 0,
   };
-  info!(
-    "Showing {} -> {}",
-    start_limit,
-    start_limit + COUNT_PER_PAGE - 1
-  );
 
   let mut results = sql_query(format!(
     "
@@ -206,6 +201,27 @@ async fn index(
   )
 }
 
+fn as_query(
+  con: Option<String>,
+  lhs: Option<String>,
+  c: Option<String>,
+  rhs: Option<String>,
+) -> String {
+  let mut res = String::new();
+  if let Some(s) = con {
+    res = res + " " + s.as_str();
+  }
+
+  let comparision = c.unwrap();
+  if comparision == "=" {
+    res = res + &lhs.unwrap() + " LIKE '%" + &rhs.unwrap() + "%'";
+  } else {
+    res = res + &lhs.unwrap() + " " + &comparision + " '" + &rhs.unwrap() + "'";
+  }
+
+  res
+}
+
 fn get_books_extended(
   pool: web::Data<Pool>,
   query: ExtendedSearch,
@@ -213,39 +229,17 @@ fn get_books_extended(
   // TODO check for wrong input
   let mut where_query = String::from("WHERE ");
   if query.s1v.is_some() {
-    where_query = where_query
-      + &query.s1v.unwrap()
-      + " "
-      + &query.s1c.unwrap()
-      + " '"
-      + &query.s1.unwrap()
-      + "'"
+    where_query = where_query + &as_query(None, query.s1v, query.s1c, query.s1);
   }
   if query.s2s.is_some() && query.s2s.as_ref().unwrap() != "" {
-    where_query = where_query
-      + " "
-      + &query.s2s.unwrap()
-      + " "
-      + &query.s2v.unwrap()
-      + " "
-      + &query.s2c.unwrap()
-      + " '"
-      + &query.s2.unwrap()
-      + "'";
+    where_query =
+      where_query + &as_query(query.s2s, query.s2v, query.s2c, query.s2);
   }
   if query.s3s.is_some() && query.s3s.as_ref().unwrap() != "" {
-    where_query = where_query
-      + " "
-      + &query.s3s.unwrap()
-      + " "
-      + &query.s3v.unwrap()
-      + " "
-      + &query.s3c.unwrap()
-      + " '"
-      + &query.s3.unwrap()
-      + "'";
+    where_query =
+      where_query + &as_query(query.s3s, query.s3v, query.s3c, query.s3);
   }
-  get_books(pool, &where_query, None)
+  get_books(pool, &where_query, query.page)
 }
 
 async fn search(
@@ -386,7 +380,7 @@ async fn main() -> std::io::Result<()> {
             }
           }
         }
-        if uri.contains("/?") {
+        if uri.contains("/?") || uri.contains("/search?") {
           uri.push_str("&page=");
         } else {
           uri.push_str("?page=");
@@ -409,7 +403,7 @@ async fn main() -> std::io::Result<()> {
         )?;
 
         // and we have more than 1 page
-        if last_page > 1 {
+        if last_page > 4 {
           if page < last_page / 2 {
             out.write(
               format!(
@@ -433,6 +427,18 @@ async fn main() -> std::io::Result<()> {
                            if page == last_page { "active" } else { "" },
               ).as_str()
             )?;
+          }
+        } else {
+          let mut i = 2;
+          while i <= last_page {
+            out.write(
+              format!(
+                r###"
+                  <li class="page-item {2}"><a class="page-link" href="{0}{1}">{1}</a></li>
+                "###, uri, i, if page == i { "active" } else { "" }
+              ).as_str()
+            )?;
+            i += 1;
           }
         }
 
